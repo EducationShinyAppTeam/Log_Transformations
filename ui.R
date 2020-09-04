@@ -1,275 +1,328 @@
-#
-# This is the user-interface definition of a Shiny web application. You can
-# run the application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-# 
-#    http://shiny.rstudio.com/
-
-# Stuff to do for lata
-# Put everything into dashboard form
-# Think more about the True false problem.  Kinda working now
-
 library(shiny)
 library(shinydashboard)
 library(shinyBS)
-library(shinyDND)
-library(shinyjs)
+#library(shinyjs) #for drag and drop
+#library(shinyDND) #for drag and drop game if we use that tab
 library(shinyWidgets)
+library(boastUtils)
+library(MASS)
+library(DAAG)
 
 #Drag n Drop with correct variables and each data set
 # Put things on PSU shiny server
-
-
 # Define UI for application that draws a histogram
-header = dashboardHeader(title = "LogTransformations"
-                         )
-
-sidebar = dashboardSidebar(
-  
-  sidebarMenu(id = "tabs",
-              menuItem("Prerequisites",tabName = "pre",icon = icon("book")),
-              menuItem("Overview",tabName = "overview",icon = icon("dashboard")),
-              menuItem("Transform",icon = icon('wpexplorer'),tabName = "transformations")
-  )
-)
-
-body = dashboardBody(
-  tags$head( 
-    tags$link(rel = "stylesheet", type = "text/css", href = "Feature.css")
- ),
-  # tags$head( 
-  #   tags$link(rel = "stylesheet", type = "text/css", href = "style.css")
-  # ),
-  tabItems(
-    tabItem(tabName = "pre",
-            
-            withMathJax(),
-              h3(strong("Background: Some reasons for using a Log Transformation")),br(),
-            h4(tags$li("Make a distribution more symmetric.")),
-            h4(tags$li("Make the relationship between distributions more linear.")),
-            h4(tags$li("Make a relationship more interpretable.")),
-            
-            br(),
-            div(style = "text-align: center",bsButton("goover", "Go to the overview", icon("bolt"), size = "median"))
-    ),
-    tabItem(tabName = "overview",
-            tags$a(href='http://stat.psu.edu/',tags$img(src='PS-HOR-RGB-2C.png', align = "left", width = 180)),
-            br(),br(),br(),
-            h3(tags$b("About:")),
-            h4(p("The goals of this app are to know when to use log transformations to linearize data, 
-                 how to analyze scenarios where a Log Transform is needed and when it is not.")),
-            h4(p("There are three different datasets, which are about Animals, Earthquakes, and Countries.")),    br(),
-            h3(tags$b("Instructions:")),
-            h4(tags$li("In the application, you will see a number of different data sets you can go through.")),
-            h4(tags$li("Go through each data set and look through the different variables to check whether a log transformation would help.")),
-            h4(tags$li("Use the 'Show Histogram' button to see each individual variable more clearly.")),
-            h4(tags$li("You can also examine log transforms on variables in your own data set!")),
-            
-            div(style = "text-align: center",bsButton("explore", "Explore", icon("bolt"), size = "large")),
-            br(),
-            h3(tags$b("Acknowledgements:")),
-          h4(p("This app was coded and developed by Alex Chen. The 'Countries' data set was extracted from https://www.stat.berkeley.edu/~s133/resources.html on June 15, 2017."))
+ui <- list(
+  tags$head(
+    tags$link(rel = "stylesheet", type = "text/css",
+              href = "https://educationshinyappteam.github.io/Style_Guide/theme/boast.css")
   ),
-    tabItem(tabName = "transformations",
-            div(style="display: inline-block;vertical-align:top;",
-                tags$a(href='https://shinyapps.science.psu.edu/',tags$img(src='homebut.PNG', width = 19))
-            ),
-            div(style="display: inline-block;vertical-align:top;",
-                circleButton("info",icon = icon("info"), status = "myClass",size = "xs")
-            ),
-            h2("Log Transformation Task"),
+  dashboardPage(
+    skin = "green", 
+    ### Create the app header
+    dashboardHeader(
+      titleWidth = 250, 
+      title = "Log Transformations", 
+      tags$li(class = "dropdown", 
+              actionLink("info",icon("info",class = "myClass"))), 
+      tags$li(class = "dropdown", 
+              tags$a(href='https://shinyapps.science.psu.edu/', 
+                     icon("home")))
+    ), 
+    dashboardSidebar(
+      width = 250, 
+      sidebarMenu(
+        id = "tabs", 
+        menuItem("Overview", tabName = "overview", icon = icon("dashboard")), 
+        menuItem("Prerequisites", tabName = "prerequisite", icon = icon("book")), 
+        menuItem("Explore", tabName = "explore", icon = icon("wpexplorer")), 
+        #menuItem("Task", tabName = "task", icon = icon("leanpub")), 
+        menuItem("References", tabName = "References", icon = icon("leanpub"))
+      ), 
+      tags$div(
+        class = "sidebar-logo", 
+        boastUtils::psu_eberly_logo("reversed")
+      )
+    ), 
+    dashboardBody(
+      tabItems(
+      tabItem(tabName = "overview", 
+              h1("Log Transformation"),
+              p("The goals of this app are to know when to use 
+              log transformations to linearize data, how to analyze scenarios
+                where a Log Transform is needed and when it is not."),
+              p("There are three different datasets, which are about Animals,
+                Earthquakes, and Countries."),
+              br(),
+              h2("Instructions"),
+              tags$ol(
+                tags$li("In the application, you will see a number of 
+                        different data sets you can go through."), 
+                tags$li("Go through each data set and look through 
+                the different variables to check whether
+                        a log transformation would help."), 
+                tags$li("Use the 'Show Histogram' button to see each 
+                        individual variable more clearly."), 
+                tags$li("You can also examine log transforms on 
+                        variables in your own data set!")
+              ), 
+              div(
+                style = "text-align: center", 
+                bsButton(
+                  inputId = "go1", 
+                  label = "GO!", 
+                  size = "large", 
+                  icon = icon("bolt"), 
+                )
+              ), 
+              br(), 
+              br(), 
+              h2("Acknowledgement"), 
+              p("This app was coded and developed by Alex Chen. The was further
+              updated by Daehoon Gwak in July 2020.", 
+                br(), 
+                br(), 
+                br(), 
+                div(class = "updated", "Last Update: 7/31/2020 by DG")
+              )
+      ), 
+        tabItem(
+          tabName = "prerequisite", 
+                h2("Prerequisites"), 
+                tags$ol(
+                  tags$li("Make a distribution more symmetric."), 
+                  tags$li("Make the relationship between distributions more 
+                          linear."), 
+                  tags$li("Make a relationship more interpretable.")
+                ), 
+                br(), 
+                div(
+                  style = "text-align:center", 
+                  bsButton(
+                    inputId = "go2", 
+                    label = "GO!", 
+                    icon("bolt"), 
+                    size = "large"
+                  )
+                )
+              ), 
+    tabItem(tabName = "explore", 
+            h2("Log Transformation Task"), 
+              conditionalPanel(
+                "input.inputs == 'Animals'", 
+                h4(" Data Description"), 
+                p("This dataset describes the correlation between the 
+                  brain weight(g) and body weight(kg) of different animals")
+              ), 
+              conditionalPanel(
+                "input.inputs == 'Earthquakes'", 
+                h4(" Data Description"), 
+                p("This data set describes different earthquakes that occurred 
+                  in the US using the magnitude, distance from where it was 
+                  recorded and the ground acceleration of the earthquake")
+              ), 
+              conditionalPanel(
+                "input.inputs == 'Countries'", 
+                h4(" Data Description"), 
+                p("This data set contains 154 countries and data about them 
+                  such as GDP, income per capita, literacy rate,  
+                  and money spent on military")
+              ), 
             sidebarLayout(
               sidebarPanel(
-                selectInput("inputs", "Select Data Set", choices = c('None', 'Animals', 'Earthquakes', "Countries", 'Input your own')),
+                selectInput("inputs", "Select Data Set", choices = c('None',
+                                      'Animals', 'Earthquakes', "Countries")), 
                 #bsPopover("inputs", "Dataset Selection", "Choose which data set you would like to observe"),
                 conditionalPanel(
-                  condition = "input.inputs == 'Countries'",
+                  condition = "input.inputs == 'Countries'", 
                   selectInput("Xworld", 
                               "Select Your X-Axis", 
-                              c('gdp', 'income', 'literacy', 'military')),
+                              c('gdp', 'income', 'literacy', 'military')), 
                   #bsPopover("Xworld", "Choose your X-Variable", "Choose which variable you want on the X Axis in the World Dataset", placement = "top"),
-                  selectInput("Yworld",
-                              "Select Your Y-Axis",
+                  selectInput("Yworld", 
+                              "Select Your Y-Axis", 
                               c('gdp', 'income', 'literacy', 'military'))
                   #bsPopover("Yworld", "Choose your Y-Variable", "Choose which variable you want on the Y Axis in the World Dataset", placement = "top")
-                ),
+                ), 
                 conditionalPanel(
-                  condition = "input.inputs == 'Earthquakes'",
-                  selectInput("Xquake",
-                              "Select Your X-Axis",
-                              c("magnitude"="mag", "distance" = "dist", "Peak Acceleration" = "accel")
-                  ),
+                  condition = "input.inputs == 'Earthquakes'", 
+                  selectInput("Xquake", 
+                              "Select Your X-Axis", 
+                              c("magnitude"="mag", "distance" = "dist", 
+                                "Peak Acceleration" = "accel")
+                  ), 
                   #bsPopover("Xquake", "Choose your X-Variable", "Choose which variable you want on the X Axis in the Earthquake Dataset", placement = "top"),
-                  selectInput("Yquake",
-                              "Select Your Y-Axis",
-                             c("magnitude" = "mag", "distance" = "dist", "Peak Acceleration" = "accel"))
+                  selectInput("Yquake", 
+                              "Select Your Y-Axis", 
+                             c("magnitude" = "mag", "distance" = "dist",
+                               "Peak Acceleration" = "accel"))
                   #bsPopover("Yquake", "Choose your Y-Variable", "Choose which variable you want on the Y Axis in the Earthquake Dataset", placement = "top")
-                ),
+                ), 
                 conditionalPanel(
-                  condition = "input.inputs == 'Animals'",
-                  selectInput("Xanimal",
-                              "Select Your X-Axis",
-                              c('body','brain')),
+                  condition = "input.inputs == 'Animals'", 
+                  selectInput("Xanimal", 
+                              "Select Your X-Axis", 
+                              c('body','brain')), 
                   #bsPopover("Xanimal", "Choose your X-Variable", "Choose which variable you want on the X Axis in the Animal Dataset", placement = "top"),
-                  selectInput("Yanimal",
-                              "Select Your Y-Axis",
+                  selectInput("Yanimal", 
+                              "Select Your Y-Axis", 
                               c('body', 'brain')
                   )
                   #bsPopover("Yanimal", "Choose your Y-variable", "Choose which variable you want on the Y Axis in the Animal Dataset", placement = "top")
-                ),
+                ), 
+                # conditionalPanel(
+                #   condition = "input.inputs == 'Input your own'",
+                #   "Be careful when entering a dataset with non-positive values",
+                #   fileInput('file', 'Choose info-file to upload',
+                #             accept = c(
+                #               'text/csv',
+                #               'text/comma-separated-values',
+                #               'text/tab-separated-values',
+                #               'text/plain',
+                #               '.csv',
+                #               '.tsv'
+                #             )
+                #   ),
+                #   bsPopover("file", "File Upload", "If you have your own dataset you would like to enter, upload it through this"),
+                #   checkboxInput('header', 'Header', TRUE),
+                #   bsPopover("header", "Header", "Please check whether there is a header for your data or not"),
+                #   radioButtons('sep', 'Separator',
+                #                c(Comma = ',',
+                #                  Semicolon = ';',
+                #                  tab = '\t'),
+                #                ','),
+                #   bsPopover("sep", "Separator", "Choose which separation your file is using(If you do not know, it is most likely separating with commas"),
+                #   radioButtons('quote', 'Quote',
+                #                c(None = '',
+                #                  'Double Quote' = '"',
+                #                'Single Quote' = "'"),
+                #               '"'),
+                #   bsPopover("quote", "Quotes", "Check what kind of data you have and whether you need to use quotes or not"),
+                #   selectInput("columns", "Select Your X-Axis", choices = NULL),
+                #   #bsPopover("columns", "Choose your X-Variable", "Choose which variable you want on the X Axis in the Dataset you inputted"),
+                #   selectInput("columns2", "Select Your Y-Axis", choices = NULL)
+                #   #bsPopover("columns", "Choose your Y-Variable", "Choose which variable you want on the Y Axis in the Dataset you inputted")
+                #   #tableOutput("fileinput")
+                # ),
+                checkboxGroupInput("transforms", "Transform X or Y",
+                                   c("Transform X", "Transform Y"),
+                                   selected = NULL), 
+                bsPopover("transforms", "Transformation", 
+                          "Decide whether you want to log transform the
+                          X, Y, or both axes"), 
+                actionButton('hist', "Show histograms"), 
+                bsPopover("hist", "Histogram", "Click me if you want
+                          to see the histograms of both the X and Y
+                          axes you have selected"), 
+                checkboxInput('loghist1', 'Show Log: XValue Hist'), 
+                bsPopover("loghist1", "Log Transform of Histogram(X-Variable)", 
+                          "Check this box if you want to see the log 
+                          transformation of the X-axis in the Histogram"), 
+                checkboxInput('loghist2', 'show Log: YValue Hist'), 
+                bsPopover("loghist2", "Log Transform of Histogram(Y-Variable)", 
+                          "Check this box if you want to see the log 
+                          transformation of the Y-axis in the Histogram"), 
+                #h4("Variable Descriptions"),
                 conditionalPanel(
-                  condition = "input.inputs == 'Input your own'",
-                  "Be careful when entering a dataset with non-positive values",
-                  fileInput('file', 'Choose info-file to upload',
-                            accept = c(
-                              'text/csv',
-                              'text/comma-separated-values',
-                              'text/tab-separated-values',
-                              'text/plain',
-                              '.csv',
-                              '.tsv'
-                            )
-                  ),
-                  bsPopover("file", "File Upload", "If you have your own dataset you would like to enter, upload it through this"),
-                  checkboxInput('header', 'Header', TRUE),
-                  bsPopover("header", "Header", "Please check whether there is a header for your data or not"),
-                  radioButtons('sep', 'Separator',
-                               c(Comma = ',',
-                                 Semicolon = ';',
-                                 tab = '\t'),
-                               ','),
-                  bsPopover("sep", "Separator", "Choose which separation your file is using(If you do not know, it is most likely separating with commas"),
-                  radioButtons('quote', 'Quote',
-                               c(None = '',
-                                 'Double Quote' = '"',
-                               'Single Quote' = "'"),
-                              '"'),
-                  bsPopover("quote", "Quotes", "Check what kind of data you have and whether you need to use quotes or not"),
-                  selectInput("columns", "Select Your X-Axis", choices = NULL),
-                  #bsPopover("columns", "Choose your X-Variable", "Choose which variable you want on the X Axis in the Dataset you inputted"),
-                  selectInput("columns2", "Select Your Y-Axis", choices = NULL)
-                  #bsPopover("columns", "Choose your Y-Variable", "Choose which variable you want on the Y Axis in the Dataset you inputted")
-                  #tableOutput("fileinput")
-                ),
-                checkboxGroupInput("transforms", "Transform X or Y", c("Transform X", "Transform Y"), selected = NULL),
-                bsPopover("transforms", "Transformation", "Decide whether you want to log transform the X, Y, or both axes"),
-                
-                actionButton('hist', "Show histograms"),
-                bsPopover("hist", "Histogram", "Click me if you want to see the histograms of both the X and Y axes you have selected"),
-                checkboxInput('loghist1', 'Show Log: XValue Hist'),
-                bsPopover("loghist1", "Log Transform of Histogram(X-Variable)", "Check this box if you want to see the log transformation of the X-axis in the Histogram"),
-                checkboxInput('loghist2', 'show Log: YValue Hist'),
-                bsPopover("loghist2", "Log Transform of Histogram(Y-Variable)", "Check this box if you want to see the log transformation of the Y-axis in the Histogram"),
-                conditionalPanel(
-                  "input.inputs == 'Animals'",
-                  h4(textOutput("dataAnimal")),
-                  bsPopover("dataAnimal", "Animals Data Set", "This data set describes the correlation between the brain weight(g) and body weight(kg) of different animals"),
-                  downloadButton("animalDownload", "Download"),
-                  bsPopover("animalDownload", "", "Download this data set!")
-                ),
-                conditionalPanel(
-                  "input.inputs == 'Earthquakes'",
-                  h4(textOutput("dataQuake")),
-                  bsPopover("dataQuake", "Earthquake Data Set", "This data set describes different earthquakes that occurred in the US using the magnitude, distance from where it was recorded and the ground acceleration of the earthquake"),
-                  downloadButton("quakeDownload", "Download"),
-                  bsPopover("quakeDownload", "", "Download this data set!")
-                ),
-                conditionalPanel(
-                  "input.inputs == 'Countries'",
-                  h4(textOutput("dataWorld")),
-                  bsPopover("dataWorld", "Countries Data Set", "This data set contains 154 countries and data about them such as GDP, income per capita, literacy rate, and money spent on military"),
-                  downloadButton("worldDownload", "Download"),
-                  bsPopover("worldDownload", "", "Download this data set!")
-                  
-                ),
-                h4("Variable Descriptions"),
-                conditionalPanel(
-                  condition = "input.inputs == 'Animals'",
-                  textOutput("Animal1"),
-                  textOutput("Animal2"),
-                  bsPopover("Animal1", "Body", "Body Weight in kg"),
-                  bsPopover("Animal2", "Brain", "Brain weight in g"),
-                  h3("Challenge Question"),
-                  h3("Does it help to make a log transform on both variables?"),
+                  condition = "input.inputs == 'Animals'", 
+                  downloadButton("animalDownload", "Download"), 
+                  #bsPopover("animalDownload", "", "Download this data set!")
+                  # textOutput("Animal1"),
+                  # textOutput("Animal2"),
+                  # bsPopover("Animal1", "Body", "Body Weight in kg"),
+                  # bsPopover("Animal2", "Brain", "Brain weight in g")
+                  h4("Challenge Question"), 
+                  p("Does it help to make a log transform on both variables?"), 
                   textOutput("animalQ")
-                ),
-                
+                ), 
                 conditionalPanel(
-                  condition = "input.inputs == 'Earthquakes'",
-                  textOutput("Quake1"),
-                  textOutput("Quake2"),
-                  textOutput("Quake3"),
-                  bsPopover("Quake1", "Magnitude", "Magnitude of earthquake"),
-                  bsPopover("Quake2", "Distance", "Distance in km from station recorded"),
-                  bsPopover("Quake3", "Peak Acceleration", "Ground Acceleration in units of gravity"),
-                  h3("Challenge Question"),
-                  h3("Which two variables would benefit most from a log transformation?  Why?"),
+                  condition = "input.inputs == 'Earthquakes'", 
+                  downloadButton("quakeDownload", "Download"), 
+                  #bsPopover("quakeDownload", "", "Download this data set!")
+                  # textOutput("Quake1"),
+                  # textOutput("Quake2"),
+                  # textOutput("Quake3"),
+                  # bsPopover("Quake1", "Magnitude", "Magnitude of earthquake"),
+                  # bsPopover("Quake2", "Distance", "Distance in km from station recorded"),
+                  # bsPopover("Quake3", "Peak Acceleration", "Ground Acceleration in units of gravity"),
+                  h4("Challenge Question"),
+                  p("Which two variables would benefit most from a log 
+                    transformation?  Why?"), 
                   textOutput("quakeQ")
-                ),
-                
+                ), 
                 conditionalPanel(
-                  condition = "input.inputs == 'Countries'",
-                  textOutput("World1"),
-                  textOutput("World2"),
-                  textOutput("World3"),
-                  textOutput("World4"),
-                  bsPopover("World1", "GDP", "Gross Domestic Product per capita"),
-                  bsPopover("World2", "Income", "Income per capita"),
-                  bsPopover("World3", "Literacy", "% of population literate"),
-                  bsPopover("World4", "Military", "Dollars(USD) spent on military"),
-                  h3("Challenge Question"),
-                  h3("Which two variables would benefit most from a log transformation?  Why?"),
+                  condition = "input.inputs == 'Countries'", 
+                  downloadButton("worldDownload", "Download"), 
+                  #bsPopover("worldDownload", "", "Download this data set!")
+                  # textOutput("World1"),
+                  # textOutput("World2"),
+                  # textOutput("World3"),
+                  # textOutput("World4"),
+                  # bsPopover("World1", "GDP", "Gross Domestic Product per capita"),
+                  # bsPopover("World2", "Income", "Income per capita"),
+                  # bsPopover("World3", "Literacy", "% of population literate"),
+                  # bsPopover("World4", "Military", "Dollars(USD) spent on military"),
+                  h4("Challenge Question"),
+                  p("Which two variables would benefit most from a log 
+                    transformation?  Why?"), 
                   textOutput("worldQ")
                 )
                 #selectInput("plottype", "Plot Type", choices = c("Dot Plot", "Histogram"))
-              ),
-                
-              
+              ), 
               # Show a plot of the generated distribution
               mainPanel(
                 conditionalPanel(
-                  condition = "input.inputs == 'Countries'",
+                  condition = "input.inputs == 'Countries'", 
                   plotOutput("worldPlot"),
-                  bsPopover("worldPlot", "World Dataset Plot", "Plot for the World Dataset given X and Y variables chosen by the user"),
-                  plotOutput("worldBars"),
-                  bsPopover("worldBars", "World X-Variable Histogram", "Histogram of the selected X-Variable"),
-                  plotOutput("worldBars2"),
-                  bsPopover("WorldBars2", "World Y-Variable Histogram", "Histogram of the selected Y-Variable")
-                  
+                  bsPopover("worldPlot", "World Dataset Plot", 
+                            "Plot for the World Dataset given X and 
+                            Y variables chosen by the user"), 
+                  plotOutput("worldBars"), 
+                  bsPopover("worldBars", "World X-Variable Histogram", 
+                            "Histogram of the selected X-Variable"), 
+                  plotOutput("worldBars2"), 
+                  bsPopover("WorldBars2", "World Y-Variable Histogram", 
+                            "Histogram of the selected Y-Variable")
                   # plotOutput("worldBars3"),
                   # plotOutput("worldBars4")
-                ),
+                ), 
                 conditionalPanel(
-                  condition = "input.inputs == 'Animals'",
-                  plotOutput("animalPlot"),
-                  bsPopover("animalPlot", "Animal Dataset Plot", "Plot for the Animal Dataset given X and Y variables chosen by the user"),
-                  plotOutput("animalBars"),
-                  bsPopover("animalBars", "Animal X-Variable Histogram", "Histogram of the selected X-Variable"),
-                  plotOutput("animalBars2"),
-                  bsPopover("animalBars2", "Animal Y-Variable Histogram", "Histogram of the selected Y-Variable")
-                ),
+                  condition = "input.inputs == 'Animals'", 
+                  plotOutput("animalPlot"), 
+                  bsPopover("animalPlot", "Animal Dataset Plot",
+                            "Plot for the Animal Dataset given X and Y
+                            variables chosen by the user"), 
+                  plotOutput("animalBars"), 
+                  bsPopover("animalBars", "Animal X-Variable Histogram", 
+                            "Histogram of the selected X-Variable"), 
+                  plotOutput("animalBars2"), 
+                  bsPopover("animalBars2", "Animal Y-Variable Histogram", 
+                            "Histogram of the selected Y-Variable")
+                ), 
                 conditionalPanel(
-                  condition = "input.inputs == 'Earthquakes'",
-                  plotOutput("quakePlot"),
-                  bsPopover("quakePlot", "Earthquake Dataset Plot", "Plot for the Earthquake Dataset given X and Y variables chosen by the user"),
-                  plotOutput("quakeBar"),
-                  bsPopover("quakeBar", "Earthquake X-Variable Histogram", "Histogram of the selected X-Variable"),
-                  plotOutput("quakeBar2"),
-                  bsPopover("quakeBar2", "EarthQuake Y-Variable Histogram", "Histogram of the selected Y-Variable")
-                ),
-                conditionalPanel(
-                  condition = "input.inputs == 'Input your own'",
-                  tableOutput("fileinput"),
-                  bsPopover("fileinput", "Inputted Dataset Sample Table", "Sample table for the Inputted Dataset"),
-                  plotOutput("filePlot"),
-                  bsPopover("filePlot", "Inputted Dataset Plot", "Plot for the Inputted Dataset given X and Y variables chosen by the user"),
-                  plotOutput("fileBars"),
-                  bsPopover("fileBars", "Inputted X-Variable Histogram", "Histogram of the seleted X-Variable"),
-                  plotOutput("fileBars2"),
-                  bsPopover("fileBars2", "Inputted Y-Variable Histogram", "Histogram of the selected Y-Variable")
+                  condition = "input.inputs == 'Earthquakes'", 
+                  plotOutput("quakePlot"), 
+                  bsPopover("quakePlot", "Earthquake Dataset Plot", 
+                            "Plot for the Earthquake Dataset given X and Y
+                            variables chosen by the user"), 
+                  plotOutput("quakeBar"), 
+                  bsPopover("quakeBar", "Earthquake X-Variable Histogram", 
+                            "Histogram of the selected X-Variable"), 
+                  plotOutput("quakeBar2"), 
+                  bsPopover("quakeBar2", "EarthQuake Y-Variable Histogram",
+                            "Histogram of the selected Y-Variable")
                 )
                 # conditionalPanel(
+                #   condition = "input.inputs == 'Input your own'",
+                #   tableOutput("fileinput"),
+                #   bsPopover("fileinput", "Inputted Dataset Sample Table", "Sample table for the Inputted Dataset"),
+                #   plotOutput("filePlot"),
+                #   bsPopover("filePlot", "Inputted Dataset Plot", "Plot for the Inputted Dataset given X and Y variables chosen by the user"),
+                #   plotOutput("fileBars"),
+                #   bsPopover("fileBars", "Inputted X-Variable Histogram", "Histogram of the seleted X-Variable"),
+                #   plotOutput("fileBars2"),
+                #   bsPopover("fileBars2", "Inputted Y-Variable Histogram", "Histogram of the selected Y-Variable")
+                # )
+                # # conditionalPanel(
                 #   condition = "input.Xanimal == 'none'",
                 #   plotOutput("EmptyPlot")
                 # ),
@@ -279,8 +332,63 @@ body = dashboardBody(
                 # )
                 # verbatimTextOutput("summary")
                 # Add in option to make it a histogram
-                
-              )))
+              )
+            )
+          ), 
+    tabItem(
+      tabName = "References", 
+      h2("References"), 
+      p(     #shinyBS
+        class = "hangingindent", 
+        "Bailey, E. (2015), shinyBS: Twitter bootstrap components for shiny, 
+        R package. Available from 
+        https://CRAN.R-project.org/package=shinyBS"
+      ), 
+      p(     #Boast Utilities 
+        class = "hangingindent", 
+        "Carey, R. (2019), boastUtils: BOAST Utilities, R Package.
+        Available from 
+        https://github.com/EducationShinyAppTeam/boastUtils"
+      ), 
+      p(     #shinydashboard
+        class = "hangingindent",
+        "Chang, W. and Borges Ribeio, B. (2018), shinydashboard: Create
+            dashboards with 'Shiny', R Package. Available from
+            https://CRAN.R-project.org/package=shinydashboard"
+      ), 
+      p(     #shiny
+        class = "hangingindent",
+        "Chang, W., Cheng, J., Allaire, J., Xie, Y., and McPherson, J. 
+        (2019), shiny: Web application framework for R, R Package.
+        Available from https://CRAN.R-project.org/package=shiny"
+      ), 
+      p(     #Dataset 'Countries'
+        class = "hangingindent",
+        "Countries dataset is available from
+            https://www.stat.berkeley.edu/~s133/resources.html"
+      ), 
+      p(     #DAAG
+        class = "hangingindent",
+        "Maindonald, J.H., and Braun, W.J. (2020), DAAG: Data Analysis 
+        and Graphics Data and Functions, R package. Available from
+        https://cran.r-project.org/web/packages/DAAG/index.html"
+      ), 
+      p(     #shinyWidgets
+        class = "hangingindent",
+        "Perrier, V., Meyer, F., Granjon, D., Fellows, I., and Davis, W. 
+        (2020), shinyWidgets: Custom Inputs Widgets for Shiny, R package. 
+        Available from 
+        https://cran.r-project.org/web/packages/shinyWidgets/index.html"
+      ), 
+      p(     #MASS
+        class = "hangingindent",
+        "Ripley, B., Venables, B., Bates, D.M., Hornik, K., Gebhardt, A., and
+        Firth, D. (2020), MASS: Support Functions and Datasets for Venables
+        and Ripley's MASS, R package. Available from
+        https://cran.r-project.org/web/packages/MASS/index.html"
+      )
+    #)
+    )
     # tabItem(tabName = "task",
     #         h3("Tasks range from Easy to Hard."),
     #           h3("One Question from each data set"),
@@ -606,7 +714,7 @@ body = dashboardBody(
     #             bsPopover("weekshowhigh", "Weekly Scoreboard", "Highscores for the week")
     #           ),
     #           fluidRow(
-    #           
+    # 
     #             textOutput("names"))
     #           )
     # 
@@ -633,9 +741,7 @@ body = dashboardBody(
     #         br(),
     #         fluidRow(column(1, offset = 11, bsButton("next1", "Next>>", style = "primary")))
     # )
-  
-            
+      )
   )
 )
-
-shinyUI(dashboardPage(skin = "green", header, sidebar, body))
+)
