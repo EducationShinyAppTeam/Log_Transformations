@@ -3,6 +3,7 @@ library(shinydashboard)
 library(shinyBS)
 library(shinyWidgets)
 library(boastUtils)
+library(ggplot2)
 
 ## App Meta Data----------------------------------------------------------------
 APP_TITLE <<- "Log_Transformation"
@@ -140,7 +141,7 @@ ui <- list(
                                     c('body', 'brain')), 
                         selectInput(inputId = "Yanimal", 
                                     label = "Select Your Y-Axis", 
-                                    c('body', 'brain'))
+                                    c('brain', 'body'))
                       ), 
                       conditionalPanel(
                         condition = "input.inputs == 'Countries'", 
@@ -196,7 +197,7 @@ ui <- list(
                       ), 
                       checkboxInput(
                         inputId = 'loghist2', 
-                        label = 'show Log: YValue Hist'
+                        label = 'Show Log: YValue Hist'
                       ), 
                       bsPopover(
                         id = "loghist2",
@@ -336,15 +337,15 @@ server <- function(input, output, session) {
       #If they don't check on checkbox
       if(length(input$transforms) == 0)
       {
-        plot(animaldata[,input$Xanimal], animaldata[,input$Yanimal], 
-             xlab = input$Xanimal, ylab = input$Yanimal, 
-             main = paste(input$Xanimal, "vs", input$Yanimal))
-        abline(lm(animaldata[,input$Xanimal]~animaldata[,input$Yanimal]),
-               col = 'red')
-        legend("topright", bty = "n",
-         legend = paste("R2 is",
-          format(summary(lm(animaldata[,input$Xanimal]~
-                  animaldata[,input$Yanimal]))$adj.r.squared, digits = 4)))
+        ggplot(animaldata, aes(x=animaldata[,input$Xanimal], y=animaldata[,input$Yanimal])) + geom_histogram()
+             #xlab = input$Xanimal, ylab = input$Yanimal, 
+             #main = paste(input$Xanimal, "vs", input$Yanimal))
+        #abline(lm(animaldata[,input$Xanimal]~animaldata[,input$Yanimal]),
+               #col = 'red')
+        #legend("topright", bty = "n",
+         #legend = paste("R2 is",
+          #format(summary(lm(animaldata[,input$Xanimal]~
+                  #animaldata[,input$Yanimal]))$adj.r.squared, digits = 4)))
       }
       # If they checkbox one of them
       else if(length(input$transforms) == 1)
