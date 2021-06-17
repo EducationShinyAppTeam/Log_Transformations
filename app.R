@@ -103,7 +103,7 @@ ui <- list(
                     width = 9, 
                     conditionalPanel(
                       condition = "input.inputs == 'Animals'", 
-                      p(" Data Description"), 
+                      h2(" Data Description"), 
                       p("This dataset describes the correlation between the 
                       brain weight(g) and body weight(kg) of different animals"
                       )
@@ -153,7 +153,7 @@ ui <- list(
                         selectInput(
                           inputId = "Yworld", 
                           label = "Select Your Y-Axis", 
-                          c('gdp', 'income', 'literacy', 'military')
+                          c('income','gdp', 'literacy', 'military')
                         )
                       ), 
                       conditionalPanel(
@@ -168,8 +168,8 @@ ui <- list(
                         selectInput(
                           inputId = "Yquake", 
                           label = "Select Your Y-Axis", 
-                          c("magnitude" = "mag",
-                            "distance" = "dist",
+                          c("distance" = "dist",
+                            "magnitude" = "mag",
                             "Peak Acceleration" = "accel")
                         )
                       ), 
@@ -332,99 +332,321 @@ server <- function(input, output, session) {
     }
   )
   # Animal Plots
+  
   output$animalPlot <- 
     renderPlot({
       #If they don't check on checkbox
+      
       if(length(input$transforms) == 0)
       {
-        ggplot(animaldata, aes(x=animaldata[,input$Xanimal], y=animaldata[,input$Yanimal])) + geom_histogram()
-             #xlab = input$Xanimal, ylab = input$Yanimal, 
-             #main = paste(input$Xanimal, "vs", input$Yanimal))
-        #abline(lm(animaldata[,input$Xanimal]~animaldata[,input$Yanimal]),
-               #col = 'red')
-        #legend("topright", bty = "n",
-         #legend = paste("R2 is",
-          #format(summary(lm(animaldata[,input$Xanimal]~
-                  #animaldata[,input$Yanimal]))$adj.r.squared, digits = 4)))
+        ggplot(
+          data = animaldata,
+          mapping = aes_string(x = input$Xanimal, y= input$Yanimal)
+        ) +geom_point() +theme_bw() + # This is the preferred theme
+          labs(
+            title = paste(input$Xanimal , "vs", input$Yanimal))+  theme(
+              plot.title = element_text(hjust = 0.5)
+            )+theme(
+              text = element_text(size = 18)
+            )
+        
       }
+      
+      
       # If they checkbox one of them
       else if(length(input$transforms) == 1)
       {
         # If they only checkbox the Transform Y option
         if(input$transforms == 'Transform Y')
         {
-          plot(animaldata[,input$Xanimal], 
-               log(animaldata[,input$Yanimal]), xlab = input$Xanimal, 
-               ylab = paste("Log:", input$Yanimal), 
-               main = paste(input$Xanimal, "vs", input$Yanimal))
-          abline(lm(animaldata[,input$Xanimal]~animaldata[,input$Yanimal]),
-          col = 'red')
-          legend("topright", bty = "n", legend = paste("R2 is",
-                 format(summary(lm(animaldata[,input$Xanimal]
-            ~log(animaldata[,input$Yanimal])))$adj.r.squared, digits = 4)))
+          ggplot(
+            data = animaldata,
+            mapping = aes_string(x = input$Xanimal, y=input$Yanimal)
+          ) +geom_point() + scale_y_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+theme_bw() + 
+            labs(
+              title = paste("Log:", input$Yanimal))+  theme(
+                plot.title = element_text(hjust = 0.5)
+              )+theme(
+                text = element_text(size = 18)
+              )
         }
-        # If they only checkbox the Transform X option
+
         else if(input$transforms == 'Transform X')
         {
-          plot(log(animaldata[,input$Xanimal]), animaldata[,input$Yanimal], 
-               xlab = paste("Log:", input$Xanimal), ylab = input$Yanimal, 
-               main = paste(input$Xanimal, "vs", input$Yanimal))
-          abline(lm(animaldata[,input$Xanimal]~animaldata[,input$Yanimal]),
-          col = 'red')
-          legend("topright", bty = "n", legend = paste("R2 is",
-             format(summary(lm(log(animaldata[,input$Xanimal])
-          ~animaldata[,input$Yanimal]))$adj.r.squared, digits = 4)))
+          ggplot(
+            data = animaldata,
+            mapping = aes_string(x = input$Xanimal, y=input$Yanimal)
+          ) +geom_point() + scale_x_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+theme_bw() + 
+            labs(
+              title = paste("Log:", input$Xanimal))+  theme(
+                plot.title = element_text(hjust = 0.5)
+              )+theme(
+                text = element_text(size = 18)
+              ) 
         }      
         
       }
       #If they check both boxes
       else #Doesn't plot line, but plots R-squared value
       {
-        plot(log(animaldata[,input$Xanimal]), log(animaldata[,input$Yanimal]),
-             xlab = paste("Log:", input$Xanimal),
-             ylab = paste("Log:", input$Yanimal), 
-             main = paste(input$Xanimal, "vs", input$Yanimal))
+        ggplot(
+          data = animaldata,
+          mapping = aes_string(x = input$Xanimal, y=input$Yanimal)) +geom_point() + 
+          scale_x_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+
+          scale_y_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+
+          theme_bw() + 
+          labs(
+            title = paste("Log x vs y"))+  theme(
+              plot.title = element_text(hjust = 0.5)
+            )+theme(
+              text = element_text(size = 18)
+            ) 
       }
     })
+  
+  #Histograms of both variables
+  output$animalBars <-
+    renderPlot({
+      if(input$loghist1 == TRUE)
+      {
+        ggplot(
+          data = animaldata,
+          mapping = aes_string(x = input$Xanimal)
+        ) + scale_y_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+geom_histogram(
+          color = "black", 
+          # gives bars a black edging  
+          fill = boastPalette[3], # makes the bars green 
+          binwidth = function(x){ifelse(IQR(x) == 0, 0.1, 2 * IQR(x) / (length(x)^(1/3)))}
+        ) +theme_bw() + # This is the preferred theme
+          labs(
+            title = paste("Histogram of Log", input$Xanimal))+  theme(
+              plot.title = element_text(hjust = 0.5)
+            )+theme(
+              text = element_text(size = 18)
+            ) 
+      }
+      
+      #Use binwidth 
+      else{
+        ggplot(
+          data = animaldata,
+          mapping = aes_string(x = input$Xanimal)
+        ) +geom_histogram(
+          color = "black", 
+          # gives bars a black edging  
+          fill = boastPalette[3], # makes the bars green 
+          binwidth = function(x){ifelse(IQR(x) == 0, 0.1, 2 * IQR(x) / (length(x)^(1/3)))}
+        ) +theme_bw() + # This is the preferred theme
+          labs(
+            title = paste("Histogram of", input$Xanimal))+  theme(
+              plot.title = element_text(hjust = 0.5)
+            )+theme(
+              text = element_text(size = 18)
+            ) 
+        
+      }
+    })
+  output$animalBars2 <-
+    renderPlot({
+      if(input$loghist2 == TRUE)
+      {
+        ggplot(
+          data = animaldata,
+          mapping = aes_string(x = input$Yanimal)
+        ) + scale_y_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+geom_histogram(
+          color = "black", 
+          # gives bars a black edging  
+          fill = boastPalette[3], # makes the bars green 
+          binwidth = function(x){ifelse(IQR(x) == 0, 0.1, 2 * IQR(x) / (length(x)^(1/3)))}
+        ) +theme_bw() + # This is the preferred theme
+          labs(
+            title = paste("Histogram of Log", input$Yanimal))+  theme(
+              plot.title = element_text(hjust = 0.5)
+            )+theme(
+              text = element_text(size = 18)
+            ) 
+      }
+      else{
+        ggplot(
+          data = animaldata,
+          mapping = aes_string(x = input$Yanimal)
+        ) +geom_histogram(
+          color = "black", 
+          # gives bars a black edging  
+          fill = boastPalette[3], # makes the bars green 
+          binwidth = function(x){ifelse(IQR(x) == 0, 0.1, 2 * IQR(x) / (length(x)^(1/3)))}
+        ) +theme_bw() + # This is the preferred theme
+          labs(
+            title = paste("Histogram of", input$Yanimal)) +  theme(
+              plot.title = element_text(hjust = 0.5)
+            )+theme(
+              text = element_text(size = 18)
+            ) 
+        
+      }
+    })
+  
+  # Plots for Countries
   output$worldPlot <-
     renderPlot({
       if(length(input$transforms) == 0)
       {
-        plot(worlddata[,input$Xworld], worlddata[,input$Yworld], 
-             xlab = input$Xworld, ylab = input$Yworld, 
-             main = paste(input$Xworld, "vs", input$Yworld))
+        ggplot(
+          data = worlddata,
+          mapping = aes_string(x = input$Xworld, y= input$Yworld)
+        ) +geom_point() +theme_bw() + # This is the preferred theme
+          labs(
+            title = paste(input$Xworld , "vs", input$Yworld))+  theme(
+              plot.title = element_text(hjust = 0.5)
+            )+theme(
+              text = element_text(size = 18)
+            )
+
       }
       else if(length(input$transforms) == 1)
       {
         if(input$transforms == 'Transform Y')
         {
-          plot(worlddata[,input$Xworld], log(worlddata[,input$Yworld]),
-               xlab = input$Xworld, ylab = paste("Log:", input$Yworld),
-               main = paste(input$Xworld, "vs", "Log:", input$Yworld))
+          ggplot(
+            data = worlddata,
+            mapping = aes_string(x = input$Xworld, y=input$Yworld)
+          ) +geom_point() + scale_y_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+theme_bw() + 
+            labs(
+              title = paste("Log", input$Yworld, "vs", input$Xworld))+  theme(
+                plot.title = element_text(hjust = 0.5)
+              )+theme(
+                text = element_text(size = 18)
+              )
         }
         else if(input$transforms == 'Transform X')
         {
-          plot(log(worlddata[,input$Xworld]), worlddata[,input$Yworld],
-               xlab = paste("Log:", input$Xworld), ylab = input$Yworld,
-               main = paste("Log:", input$Xworld, "vs", input$Yworld))
+          ggplot(
+            data = worlddata,
+            mapping = aes_string(x = input$Xworld, y=input$Yworld)
+          ) +geom_point() + scale_x_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+theme_bw() + 
+            labs(
+              title = paste("Log", input$Xworld, "vs", input$Yworld))+ 
+            
+            theme(
+                plot.title = element_text(hjust = 0.5)
+              )+theme(
+                text = element_text(size = 18)
+              )
         }
       }
       else
       {
-        plot(log(worlddata[,input$Xworld]), log(worlddata[,input$Yworld]), 
-             xlab = paste("Log:", input$Xworld), 
-             ylab = paste("Log:", input$Yworld), 
-             main = paste("Log:", input$Xworld, "vs", "Log:", input$Yworld))
+        ggplot(
+          data = worlddata,
+          mapping = aes_string(x = input$Xworld, y=input$Yworld)) +geom_point() + 
+          scale_x_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+
+          scale_y_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+
+          theme_bw() + 
+          labs(
+            title = paste("Log", input$Xworld,"vs", "Log", input$Yworld))+  theme(
+              plot.title = element_text(hjust = 0.5)
+            )+theme(
+              text = element_text(size = 18)
+            ) 
       }
     })
+  output$worldBars <-
+    renderPlot({
+      if(input$loghist1 == TRUE)
+      {
+        ggplot(
+          data = worlddata,
+          mapping = aes_string(x = input$Xworld)
+        ) + scale_x_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+geom_histogram(
+          color = "black", 
+          # gives bars a black edging  
+          fill = boastPalette[3], # makes the bars green 
+          binwidth = function(x){ifelse(IQR(x) == 0, 0.1, 2 * IQR(x) / (length(x)^(1/3)))}
+        ) +theme_bw() + # This is the preferred theme
+          labs(
+            title = paste("Histogram of Log", input$Xworld))+  theme(
+              plot.title = element_text(hjust = 0.5)
+            )+theme(
+              text = element_text(size = 18)
+            ) 
+      }
+      else{
+        ggplot(
+          data = worlddata,
+          mapping = aes_string(x = input$Xworld)
+        ) +geom_histogram(
+          color = "black", 
+          # gives bars a black edging  
+          fill = boastPalette[3], # makes the bars green 
+          binwidth = function(x){ifelse(IQR(x) == 0, 0.1, 2 * IQR(x) / (length(x)^(1/3)))}
+        ) +theme_bw() + # This is the preferred theme
+          labs(
+            title = paste("Histogram of", input$Xworld))+  theme(
+              plot.title = element_text(hjust = 0.5)
+            )+theme(
+              text = element_text(size = 18)
+            ) 
+      }
+    })
+  output$worldBars2 <-
+    renderPlot({
+      if(input$loghist2 == TRUE)
+      {
+        ggplot(
+          data = worlddata,
+          mapping = aes_string(x = input$Yworld)
+        ) + scale_y_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+geom_histogram(
+          color = "black", 
+          # gives bars a black edging  
+          fill = boastPalette[3], # makes the bars green 
+          binwidth = function(x){ifelse(IQR(x) == 0, 0.1, 2 * IQR(x) / (length(x)^(1/3)))}
+        ) +theme_bw() + # This is the preferred theme
+          labs(
+            title = paste("Histogram of Log", input$Yworld))+  theme(
+              plot.title = element_text(hjust = 0.5)
+            )+theme(
+              text = element_text(size = 18)
+            ) 
+      }
+      else{
+        ggplot(
+          data = worlddata,
+          mapping = aes_string(x = input$Yworld)
+        ) +geom_histogram(
+          color = "black", 
+          # gives bars a black edging  
+          fill = boastPalette[3], # makes the bars green 
+          binwidth = function(x){ifelse(IQR(x) == 0, 0.1, 2 * IQR(x) / (length(x)^(1/3)))}
+        ) +theme_bw() + # This is the preferred theme
+          labs(
+            title = paste("Histogram of", input$Yworld))+  theme(
+              plot.title = element_text(hjust = 0.5)
+            )+theme(
+              text = element_text(size = 18)
+            ) 
+      }
+    })
+  
+
+  # Plots for earthquakes
+  
   output$quakePlot <-
     renderPlot({
       #If they don't checkbox anything
       if(length(input$transforms) == 0)
       {
-        plot(quakedata[,input$Xquake], quakedata[,input$Yquake], 
-             xlab = input$Xquake, ylab = input$Yquake,
-             main = paste(input$Xquake, "vs", input$Yquake))
+        ggplot(
+          data = quakedata,
+          mapping = aes_string(x = input$Xquake, y= input$Yquake)
+        ) +geom_point() +theme_bw() + # This is the preferred theme
+          labs(
+            title = paste(input$Xquake , "vs", input$Yquake))+  theme(
+              plot.title = element_text(hjust = 0.5)
+            )+theme(
+              text = element_text(size = 18)
+            )
+        
+
       }
       # If they checkbox one of them
       else if(length(input$transforms) == 1)
@@ -432,110 +654,125 @@ server <- function(input, output, session) {
         # If they only checkbox the Transform Y option
         if(input$transforms == 'Transform Y')
         {
-          plot(quakedata[,input$Xquake], log(quakedata[,input$Yquake]), 
-               xlab = input$Xquake, ylab = paste("Log:", input$Yquake), 
-               main = paste(input$Xquake, "vs Log:", input$Yquake))
+          ggplot(
+            data = quakedata,
+            mapping = aes_string(x = input$Xquake, y=input$Yquake)
+          ) +geom_point() + scale_y_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+theme_bw() + 
+            labs(
+              title = paste("Log", input$Yquake, "vs", input$Xquake))+  theme(
+                plot.title = element_text(hjust = 0.5)
+              )+theme(
+                text = element_text(size = 18)
+              )
         }
         # If they only checkbox the Transform X option
         else if(input$transforms == 'Transform X')
         {
-          plot(log(quakedata[,input$Xquake]), quakedata[,input$Yquake],
-               xlab = paste("Log:", input$Xquake), ylab = input$Yquake,
-               main = paste("Log:", input$Xquake, "vs", input$Yquake))
+          ggplot(
+            data = quakedata,
+            mapping = aes_string(x = input$Xquake, y=input$Yquake)
+          ) +geom_point() + scale_x_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+theme_bw() + 
+            labs(
+              title = paste("Log", input$Xquake, "vs", input$Yquake))+  theme(
+                plot.title = element_text(hjust = 0.5)
+              )+theme(
+                text = element_text(size = 18)
+              )
         }
       }
       #If they check both boxes
       else #Doesn't plot line, but plots R-squared value
       {
-        plot(log(quakedata[,input$Xquake]), log(quakedata[,input$Yquake]),
-             xlab = paste("Log:", input$Xquake),
-             ylab = paste("Log:", input$Yquake),
-             main = paste("Log:", input$Xquake, "vs Log:", input$Yquake))
+        ggplot(
+          data = quakedata,
+          mapping = aes_string(x = input$Xquake, y=input$Yquake)) +geom_point() + 
+          scale_x_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+
+          scale_y_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+
+          theme_bw() + 
+          labs(
+            title = paste("Log", input$Xquake, "vs",input$Yquake ))+  theme(
+              plot.title = element_text(hjust = 0.5)
+            )+theme(
+              text = element_text(size = 18)
+            ) 
       }
     })
-  #Histograms of both variables
-    output$animalBars <-
-      renderPlot({
-        if(input$loghist1 == TRUE)
-        {
-          hist(log(animaldata[,input$Xanimal]),
-               main = paste("Histogram of Log:", input$Xanimal, sep = ''),
-               xlab = paste("Log:", input$Xanimal))
-        }
-        else{
-          hist(animaldata[,input$Xanimal],
-               main = paste("Histogram of", input$Xanimal),
-               xlab = input$Xanimal)
-        }
-      })
-    output$animalBars2 <-
-      renderPlot({
-        if(input$loghist2 == TRUE)
-        {
-          hist(log(animaldata[,input$Yanimal]),
-               main = paste("Histogram of Log:", input$Yanimal, sep = ''),
-               xlab = paste("Log:", input$Yanimal))
-        }
-        else{
-          hist(animaldata[,input$Yanimal],
-               main = paste("Histogram of", input$Yanimal),
-               xlab = input$Yanimal)
-        }
-      })
-    output$worldBars <-
-      renderPlot({
-        if(input$loghist1 == TRUE)
-        {
-          hist(log(worlddata[,input$Xworld]),
-               main = paste("Histogram of Log:", input$Xworld, sep = ''),
-               xlab = paste("Log:", input$Xworld))
-        }
-        else{
-          hist(worlddata[,input$Xworld],
-               main = paste("Histogram of", input$Xworld),
-               xlab = input$Xworld)
-        }
-      })
-    output$worldBars2 <-
-      renderPlot({
-        if(input$loghist2 == TRUE)
-        {
-          hist(log(worlddata[,input$Yworld]), 
-               main = paste("Histogram of Log:", input$Yworld, sep = ''),
-               xlab = paste("Log:", input$Yworld))
-        }
-        else{
-          hist(worlddata[,input$Yworld],
-               main = paste("Histogram of", input$Yworld),
-               xlab = input$Yworld)
-        }
-      })
+
+
     output$quakeBar2 <-
       renderPlot({
         if(input$loghist2 == TRUE)
         {
-          hist(log(quakedata[,input$Yquake]),
-               main = paste("Histogram of Log:", input$Yquake, sep = ''),
-               xlab = paste("Log:", input$Yquake))
+          ggplot(
+            data = quakedata,
+            mapping = aes_string(x = input$Yquake)
+          ) + scale_y_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+geom_histogram(
+            color = "black", 
+            # gives bars a black edging  
+            fill = boastPalette[3], # makes the bars green 
+            binwidth = function(x){ifelse(IQR(x) == 0, 0.1, 2 * IQR(x) / (length(x)^(1/3)))}
+          ) +theme_bw() + # This is the preferred theme
+            labs(
+              title = paste("Histogram of Log", input$Yquake))+  theme(
+                plot.title = element_text(hjust = 0.5)
+              )+theme(
+                text = element_text(size = 18)
+              ) 
         }
         else{
-          hist(quakedata[,input$Yquake],
-               main = paste("Histogram of", input$Yquake),
-               xlab = input$Yquake)
+          ggplot(
+            data = quakedata,
+            mapping = aes_string(x = input$Yquake)
+          ) +geom_histogram(
+            color = "black", 
+            # gives bars a black edging  
+            fill = boastPalette[3], # makes the bars green 
+            binwidth = function(x){ifelse(IQR(x) == 0, 0.1, 2 * IQR(x) / (length(x)^(1/3)))}
+          ) +theme_bw() + # This is the preferred theme
+            labs(
+              title = paste("Histogram of", input$Yquake))+  theme(
+                plot.title = element_text(hjust = 0.5)
+              )+theme(
+                text = element_text(size = 18)
+              ) 
         }
       })
     output$quakeBar <-
       renderPlot({
         if(input$loghist1 == TRUE)
         {
-          hist(log(quakedata[,input$Xquake]),
-               main = paste("Histogram of Log:", input$Xquake, sep = ''),
-               xlab = paste("Log:", input$Xquake))
+          ggplot(
+            data = quakedata,
+            mapping = aes_string(x = input$Xquake)
+          ) + scale_x_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+geom_histogram(
+            color = "black", 
+            # gives bars a black edging  
+            fill = boastPalette[3], # makes the bars green 
+            binwidth = function(x){ifelse(IQR(x) == 0, 0.1, 2 * IQR(x) / (length(x)^(1/3)))}
+          ) +theme_bw() + # This is the preferred theme
+            labs(
+              title = paste("Histogram of Log", input$Xquake))+  theme(
+                plot.title = element_text(hjust = 0.5)
+              )+theme(
+                text = element_text(size = 18)
+              ) 
         }
         else{
-          hist(quakedata[,input$Xquake],
-               main = paste("Histogram of", input$Xquake),
-               xlab = input$Xquake)
+          ggplot(
+            data = quakedata,
+            mapping = aes_string(x = input$Xquake)
+          ) +geom_histogram(
+            color = "black", 
+            # gives bars a black edging  
+            fill = boastPalette[3], # makes the bars green 
+            binwidth = function(x){ifelse(IQR(x) == 0, 0.1, 2 * IQR(x) / (length(x)^(1/3)))}
+          ) +theme_bw() + # This is the preferred theme
+            labs(
+              title = paste("Histogram of", input$Xquake))+  theme(
+                plot.title = element_text(hjust = 0.5)
+              )+theme(
+                text = element_text(size = 18)
+              ) 
         }
       })
     output$fileBars2 <-
