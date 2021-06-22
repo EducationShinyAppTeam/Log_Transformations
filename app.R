@@ -271,6 +271,12 @@ ui <- list(
         (2020), shinyWidgets: Custom Inputs Widgets for Shiny, R package. 
         Available from 
         https://cran.r-project.org/web/packages/shinyWidgets/index.html"
+      ),
+      p(     #MASS
+        class = "hangingindent",
+        "Venables, W. N. and Ripley, B. D. (2002), MASS: Support Functions and 
+        Datasets for Venables and Ripley's MASS, R Package. Available from
+            https://CRAN.R-project.org/package=MASS"
       )
     )
    )
@@ -453,7 +459,7 @@ server <- function(input, output, session) {
         ggplot(
           data = animaldata,
           mapping = aes_string(x = input$Yanimal)
-        ) + scale_y_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+geom_histogram(
+        ) + scale_x_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+geom_histogram(
           color = "black", 
           # gives bars a black edging  
           fill = boastPalette[3], # makes the bars green 
@@ -557,7 +563,7 @@ server <- function(input, output, session) {
         ggplot(
           data = worlddata,
           mapping = aes_string(x = input$Xworld)
-        ) + scale_x_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+geom_histogram(
+        ) + scale_y_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+geom_histogram(
           color = "black", 
           # gives bars a black edging  
           fill = boastPalette[3], # makes the bars green 
@@ -595,7 +601,7 @@ server <- function(input, output, session) {
         ggplot(
           data = worlddata,
           mapping = aes_string(x = input$Yworld)
-        ) + scale_y_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+geom_histogram(
+        ) + scale_x_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+geom_histogram(
           color = "black", 
           # gives bars a black edging  
           fill = boastPalette[3], # makes the bars green 
@@ -706,7 +712,7 @@ server <- function(input, output, session) {
           ggplot(
             data = quakedata,
             mapping = aes_string(x = input$Yquake)
-          ) + scale_y_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+geom_histogram(
+          ) + scale_x_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+geom_histogram(
             color = "black", 
             # gives bars a black edging  
             fill = boastPalette[3], # makes the bars green 
@@ -744,7 +750,7 @@ server <- function(input, output, session) {
           ggplot(
             data = quakedata,
             mapping = aes_string(x = input$Xquake)
-          ) + scale_x_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+geom_histogram(
+          ) + scale_y_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+geom_histogram(
             color = "black", 
             # gives bars a black edging  
             fill = boastPalette[3], # makes the bars green 
