@@ -5,6 +5,15 @@ library(shinyWidgets)
 library(boastUtils)
 library(ggplot2)
 
+worlddata = read.csv('world2.csv')
+worlddata = worlddata[,-c(1,2,7)]
+worlddata = worlddata[-c(36),]
+worlddata$income = as.numeric(worlddata$income)
+quakedata = datasets::attenu
+animaldata = MASS::Animals
+
+colnames(attenu) <- c("event", "magnitude", "station", "distance", "Peak Acceleration")
+
 ## App Meta Data----------------------------------------------------------------
 APP_TITLE <<- "Log_Transformation"
 APP_DESCP  <<- paste(
@@ -110,7 +119,7 @@ ui <- list(
                     ), 
                     conditionalPanel(
                       condition = "input.inputs == 'Earthquakes'", 
-                      p(" Data Description"), 
+                      h2(" Data Description"), 
                       p("This data set describes different earthquakes that 
                       occurred in the US using the magnitude, distance from 
                       where it was recorded and the ground acceleration of 
@@ -119,7 +128,7 @@ ui <- list(
                     ), 
                     conditionalPanel(
                       condition = "input.inputs == 'Countries'", 
-                      p(" Data Description"), 
+                      h2(" Data Description"), 
                       p("This data set contains 154 countries and data about 
                       them such as GDP, income per capita, literacy rate, 
                       and money spent on military"
@@ -161,16 +170,16 @@ ui <- list(
                         selectInput(
                           inputId = "Xquake", 
                           label = "Select Your X-Axis", 
-                          c("magnitude" = "mag", 
-                            "distance" = "dist", 
-                            "Peak Acceleration" = "accel")
+                          c("magnitude", 
+                            "distance", 
+                            "Peak Acceleration")
                         ), 
                         selectInput(
                           inputId = "Yquake", 
                           label = "Select Your Y-Axis", 
-                          c("distance" = "dist",
-                            "magnitude" = "mag",
-                            "Peak Acceleration" = "accel")
+                          c("distance",
+                            "magnitude",
+                            "Peak Acceleration")
                         )
                       ), 
                       checkboxGroupInput(
@@ -277,6 +286,11 @@ ui <- list(
         "Venables, W. N. and Ripley, B. D. (2002), MASS: Support Functions and 
         Datasets for Venables and Ripley's MASS, R Package. Available from
             https://CRAN.R-project.org/package=MASS"
+      ),
+      p(     #Attenu Earthquake
+        class = "hangingindent",
+        "Joyner, W. B., Boore, D. M., and Porcella, R. D. (1981), 
+        Peak Horizontal Acceleration and Velocity from Strong-Motion Records Including Records from the 1979 Imperial Valley California Earthquake"
       )
     )
    )
@@ -307,12 +321,7 @@ server <- function(input, output, session) {
     updateTabItems(session, "pages", "explore")
   })
   # Adding in Data
-  worlddata = read.csv('world2.csv')
-  worlddata = worlddata[,-c(1,2,7)]
-  worlddata = worlddata[-c(36),]
-  worlddata$income = as.numeric(worlddata$income)
-  quakedata = datasets::attenu
-  animaldata = MASS::Animals
+ 
   output$animalDownload <- downloadHandler(
     filename = function() {
       paste('animal-', Sys.Date(), '.csv', sep='')
@@ -337,6 +346,7 @@ server <- function(input, output, session) {
       write.csv(worlddata, con)
     }
   )
+
   # Animal Plots
   
   output$animalPlot <- 
@@ -837,7 +847,7 @@ server <- function(input, output, session) {
   })
   
   output$quakeQ <- renderText({
-    if(input$Xquake == "dist" && input$Yquake == "accel" 
+    if(input$Xquake == "distance" && input$Yquake == "Peak Acceleration" 
        && length(input$transforms) == 2){
       "Correct"
     }
@@ -883,14 +893,14 @@ server <- function(input, output, session) {
     "Submit when finished!"
     input$q2A
     isolate(
-      if(input$Xquake == 'dist' &&
-         input$Yquake == 'accel'&&
+      if(input$Xquake == 'distance' &&
+         input$Yquake == 'Peak Acceleration'&&
          length(input$transforms) == 2){
         values$count = values$count + 5
         text = "Correct!"
         updateButton(session, "q2A", disabled = TRUE)
       }
-      else if(input$Xquake == "mag" && input$Yquake == "mag"){
+      else if(input$Xquake == "magnitude" && input$Yquake == "magnitude"){
         text = "Submit when finished!"
       }
       else{
@@ -1255,7 +1265,7 @@ server <- function(input, output, session) {
     "distance"
   })
   output$Quake3 <- renderText({
-    "peak acceleration"
+    "Peak Acceleration"
   })
   output$World1 <- renderText({
     "gdp"
