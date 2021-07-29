@@ -12,7 +12,7 @@ worlddata$income = as.numeric(worlddata$income)
 quakedata = datasets::attenu
 animaldata = MASS::Animals
 
-colnames(attenu) <- c("event", "magnitude", "station", "distance", "Peak Acceleration")
+colnames(quakedata) <- c("event", "magnitude", "station", "distance", "Peak Acceleration")
 
 ## App Meta Data----------------------------------------------------------------
 APP_TITLE <<- "Log_Transformation"
