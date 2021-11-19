@@ -1,47 +1,53 @@
+# Load packages ----
 library(shiny)
 library(shinydashboard)
 library(shinyBS)
 library(shinyWidgets)
 library(boastUtils)
 library(ggplot2)
+library(MASS)
+library(scales)
 
-worlddata = read.csv('world2.csv')
-worlddata = worlddata[,-c(1,2,7)]
-worlddata = worlddata[-c(36),]
-worlddata$income = as.numeric(worlddata$income)
-quakedata = datasets::attenu
-animaldata = MASS::Animals
+# Define FD binwidth function ----
+fdWidth <- function(x){
+  ifelse(IQR(x) == 0, 0.1, 2 * IQR(x) / (length(x)^(1/3)))
+}
 
-colnames(quakedata) <- c("event", "magnitude", "station", "distance", "Peak Acceleration")
+# Load and preprocess data ----
+worldData <- read.csv('world2.csv')
+worldData <- worldData[,-c(1,2,7)]
+worldData <- worldData[-c(36),]
+worldData$income <- as.numeric(worldData$income)
+countryVars <- c("gdp", "income", "literacy", "military")
 
-## App Meta Data----------------------------------------------------------------
-APP_TITLE <<- "Log_Transformation"
-APP_DESCP  <<- paste(
-  "This app provides the information when to use log transformations", 
-  "to linearize data, how to analyze scenarios where a Log Transform", 
-  "is needed and when it is not."
-)
-## End App Meta Data------------------------------------------------------------
+quakeData <- datasets::attenu
+colnames(quakeData) <- c("event", "magnitude", "station", "distance", "peak acceleration")
+earthquakeVars <- c("magnitude", "distance", "peak acceleration")
+
+animalData <- MASS::Animals
+animalVars <- c("body", "brain")
 
 # Define the UI ----
 ui <- list(
   dashboardPage(
     skin = "green",  
-    ### Create the app header
+    ## Header ----
     dashboardHeader(
       titleWidth = 250, 
       title = "Log Transformations", 
-      tags$li(class="dropdown", 
-              actionLink("info", icon("info"), class="myClass")), 
+      tags$li(class = "dropdown", actionLink("info", icon("info"))),
       tags$li(
-        class = "dropdown", 
-        tags$a(target = "_blank", icon("comments"), 
-               href = "https://pennstate.qualtrics.com/jfe/form/SV_7TLIkFtJEJ7fEPz?appName=Log_Transformations"
+        class = "dropdown",
+        boastUtils::surveyLink(name = "Log_Transformations") 
+      ),
+      tags$li(
+        class = "dropdown",
+        tags$a(href = 'https://shinyapps.science.psu.edu/',
+               icon("home")
         )
-      ), 
-      tags$li(class='dropdown', 
-              tags$a(href="https://shinyapps.science.psu.edu/", 
-                     icon('home', lib='font-awesome')))), 
+      )
+    ), 
+    ## Sidebar ----
     dashboardSidebar(
       width = 250, 
       sidebarMenu(
@@ -54,195 +60,137 @@ ui <- list(
         class = "sidebar-logo", 
         boastUtils::psu_eberly_logo("reversed")
       )
-    ), 
+    ),
+    ## Body ----
     dashboardBody(
       tabItems(
-      tabItem(tabName = "overview", 
-              h1("Log Transformation"), 
-              p("The goals of this app are to know when to use log 
-              transformations to linearize data, how to analyze scenarios
-                where a Log Transform is needed and when it is not."), 
-              p("There are three different datasets, which are about Animals, 
-                Earthquakes, and Countries."), 
-              br(), 
-              h2("Instructions"), 
-              tags$ol(
-                tags$li("In the application, you will see a number of 
-                        different data sets you can go through."),  
-                tags$li("Go through each data set and look through 
-                the different variables to check whether
-                        a log transformation would help."),  
-                tags$li("Use the 'Show Histogram' button to see each 
-                        individual variable more clearly."),  
-                tags$li("You can also examine log transforms on 
-                        variables in your own data set!")
-              ), 
-              div(
-                style = "text-align: center", 
-                bsButton(
-                  inputId = "go1", 
-                  label = "GO!", 
-                  size = "large", 
-                  icon = icon("bolt"), 
-                )
-              ), 
-              br(), 
-              br(), 
-              h2("Acknowledgement"), 
-              p("This app was coded and developed by Alex Chen. The was further
-              updated by Daehoon Gwak in November 2020.", 
-                br(), 
-                br(), 
-                br(), 
-                div(class = "updated", "Last Update: 12/10/2020 by DG")
-              )
-      ), 
-    tabItem(tabName = "explore", 
-            h2("Log Transformation Task"), 
-              fluidRow(
-                  column(
-                    width = 3,
-                    selectInput(
-                      inputId = "inputs",
-                      label = "Select Data Set",
-                      choices = c('Animals', 'Earthquakes', "Countries")
-                    ) 
-                  ), 
-                  column(
-                    width = 9, 
-                    conditionalPanel(
-                      condition = "input.inputs == 'Animals'", 
-                      h2(" Data Description"), 
-                      p("This dataset describes the correlation between the 
-                      brain weight(g) and body weight(kg) of different animals"
-                      )
-                    ), 
-                    conditionalPanel(
-                      condition = "input.inputs == 'Earthquakes'", 
-                      h2(" Data Description"), 
-                      p("This data set describes different earthquakes that 
-                      occurred in the US using the magnitude, distance from 
-                      where it was recorded and the ground acceleration of 
-                      the earthquake"
-                      )
-                    ), 
-                    conditionalPanel(
-                      condition = "input.inputs == 'Countries'", 
-                      h2(" Data Description"), 
-                      p("This data set contains 154 countries and data about 
-                      them such as GDP, income per capita, literacy rate, 
-                      and money spent on military"
-                      )
-                    )
-                  )
-              ), 
-              fluidRow(
-                #sidelayout
-                column(
-                  width = 3, 
-                  br(), 
-                  wellPanel(
-                    fluidRow(
-                      conditionalPanel(
-                        condition = "input.inputs == 'Animals'", 
-                        selectInput(inputId = "Xanimal", 
-                                    label = "Select Your X-Axis", 
-                                    c('body', 'brain')), 
-                        selectInput(inputId = "Yanimal", 
-                                    label = "Select Your Y-Axis", 
-                                    c('brain', 'body'))
-                      ), 
-                      conditionalPanel(
-                        condition = "input.inputs == 'Countries'", 
-                        selectInput(
-                          inputId = "Xworld", 
-                          label = "Select Your X-Axis", 
-                          c('gdp', 'income', 'literacy', 'military')
-                        ), 
-                        selectInput(
-                          inputId = "Yworld", 
-                          label = "Select Your Y-Axis", 
-                          c('income','gdp', 'literacy', 'military')
-                        )
-                      ), 
-                      conditionalPanel(
-                        condition = "input.inputs == 'Earthquakes'", 
-                        selectInput(
-                          inputId = "Xquake", 
-                          label = "Select Your X-Axis", 
-                          c("magnitude", 
-                            "distance", 
-                            "Peak Acceleration")
-                        ), 
-                        selectInput(
-                          inputId = "Yquake", 
-                          label = "Select Your Y-Axis", 
-                          c("distance",
-                            "magnitude",
-                            "Peak Acceleration")
-                        )
-                      ), 
-                      checkboxGroupInput(
-                        inputId = "transforms", 
-                        label = "Transform X or Y", 
-                        c("Transform X", "Transform Y"), 
-                        selected = NULL
-                      ), 
-                      bsPopover(
-                        id = "transforms", 
-                        title = "Transformation", 
-                        "Decide whether you want to log transform the
-                          X, Y, or both axes"
-                      ), 
-                      checkboxInput(
-                        inputId = 'loghist1', 
-                        label = 'Show Log: XValue Hist'
-                      ), 
-                      bsPopover(
-                        id = "loghist1", 
-                        title = "Log Transform of Histogram(X-Variable)",
-                        "Check this box if you want to see the log
-                          transformation of the X-axis in the Histogram"
-                      ), 
-                      checkboxInput(
-                        inputId = 'loghist2', 
-                        label = 'Show Log: YValue Hist'
-                      ), 
-                      bsPopover(
-                        id = "loghist2",
-                        title = "Log Transform of Histogram(Y-Variable)", 
-                        "Check this box if you want to see the log
-                          transformation of the Y-axis in the Histogram"
-                      )
-                    )
-                  )
+        ### Overview page ----
+        tabItem(
+          tabName = "overview", 
+          h1("Log Transformations"), 
+          p("The goals of this app are to help a user get a sense of when to use
+            log transformations to linearize data, how to analyze scenarios where
+            a log transformation is needed and when it is not."), 
+          p("We will use three different datasets in this app, which are about
+            Animals, Earthquakes, and Countries."), 
+          br(), 
+          h2("Instructions"), 
+          tags$ol(
+            tags$li("In the application, you will see a number of different data
+                    sets you can work with."),  
+            tags$li("Go through each data set and look at the different variables
+                    to check whether a log transformation would help."),  
+            tags$li("Use the 'Show Histogram' button to see each individual
+                    variable more clearly.")
+          ), 
+          div(
+            style = "text-align: center;", 
+            bsButton(
+              inputId = "go1", 
+              label = "GO!", 
+              size = "large", 
+              icon = icon("bolt"), 
+            )
+          ), 
+          br(), 
+          br(), 
+          h2("Acknowledgement"), 
+          p("This app was coded and developed by Alex Chen. The was further
+              updated by Daehoon Gwak in November 2020 and by Paridhi Khandelwal
+              in October 2021.", 
+            br(),
+            br(),
+            "Cite this app as:",
+            br(),
+            boastUtils::citeApp(),
+            br(),
+            br(),
+            div(class = "updated", "Last Update: 11/19/2021 by NJH")
+          )
+        ),
+        ### Explore page ----
+        tabItem(
+          tabName = "explore", 
+          h2("Exploring Log Transformations"),
+          p("Select a data set and variables to explore to see whether applying 
+            a log transformation can be helpful."),
+          fluidRow(
+            column(
+              width = 4,
+              offset = 0,
+              selectInput(
+                inputId = "selectData",
+                label = "Select Data Set",
+                choices = c('Animals', 'Earthquakes', "Countries")
+              ) 
+            ), 
+            column(
+              width = 8,
+              offset = 0,
+              uiOutput("dataDescription")
+            )
+          ), 
+          fluidRow(
+            column(
+              width = 4, 
+              offset = 0,
+              wellPanel(
+                selectInput(
+                  inputId = "horizVar",
+                  label = "Variable on horizontal axis",
+                  choices = c("A", "B", "C"),
+                ),
+                selectInput(
+                  inputId = "vertVar",
+                  label = "Variable on vertical axis",
+                  choices = c("A", "B", "C")
+                ),
+                checkboxGroupInput(
+                  inputId = "transforms", 
+                  label = "Apply log transformation to", 
+                  choices = c("horizontal", "vertical"), 
+                  selected = NULL
+                ),
+                bsPopover(
+                  id = "transforms", 
+                  title = "Transformation", 
+                  content = paste("Decide whether you want to log transform",
+                                  "the horizontal, the vertical, or both axes."),
+                  placement = "top"
+                ),
+                hr(),
+                p("Why not apply transform choices to histograms?"),
+                checkboxInput(
+                  inputId = 'loghist1', 
+                  label = 'Show Log: XValue Hist'
                 ), 
-                column(
-                  width = 9, 
-                  #main panel
-                  fluidRow(
-                    conditionalPanel(
-                      condition = "input.inputs == 'Countries'", 
-                      plotOutput(outputId = "worldPlot"), 
-                      plotOutput(outputId = "worldBars"),
-                      plotOutput(outputId = "worldBars2")
-                    ), 
-                    conditionalPanel(
-                      condition = "input.inputs == 'Animals'", 
-                      plotOutput(outputId = "animalPlot"), 
-                      plotOutput(outputId = "animalBars"), 
-                      plotOutput(outputId = "animalBars2")
-                    ), 
-                    conditionalPanel(
-                      condition = "input.inputs == 'Earthquakes'", 
-                      plotOutput(outputId = "quakePlot"), 
-                      plotOutput(outputId = "quakeBar"), 
-                      plotOutput(outputId = "quakeBar2")
-                    )
-                  ))
+                bsPopover(
+                  id = "loghist1", 
+                  title = "Log Transform of Histogram(X-Variable)",
+                  content = "Check this box if you want to see the log transformation of the X-axis in the Histogram"
+                ), 
+                checkboxInput(
+                  inputId = 'loghist2', 
+                  label = 'Show Log: YValue Hist'
+                ), 
+                bsPopover(
+                  id = "loghist2",
+                  title = "Log Transform of Histogram(Y-Variable)", 
+                  content = "Check this box if you want to see the log transformation of the Y-axis in the Histogram"
                 )
-              ),
-    tabItem(
+              )
+            ), 
+            column(
+              width = 8, 
+              offset = 0,
+              plotOutput("scatterPlot"),
+              plotOutput("horizontalHist"),
+              plotOutput("verticalHist")
+            )
+          )
+        ),
+        ### References page ----
+        tabItem(
       tabName = "References", 
       h2("References"), 
       p(     #shinyBS
@@ -306,6 +254,8 @@ disableActionButton <- function(id,session) {
 
 # Define the server ----
 server <- function(input, output, session) {
+  dataSet <- reactiveVal(NULL)
+  
   observeEvent(input$info,{
     sendSweetAlert(
       session = session, 
@@ -320,34 +270,234 @@ server <- function(input, output, session) {
   observeEvent(input$go1, {
     updateTabItems(session, "pages", "explore")
   })
-  # Adding in Data
- 
-  output$animalDownload <- downloadHandler(
-    filename = function() {
-      paste('animal-', Sys.Date(), '.csv', sep='')
-    },
-    content = function(con) {
-      write.csv(animaldata, con)
+  
+  ## Results of selecting data set ----
+  observeEvent(
+    eventExpr = input$selectData,
+    handlerExpr = {
+      ### Update data description ----
+      output$dataDescription <- renderUI(
+        switch(
+          EXPR = input$selectData,
+          Animals = "Th Animals data set describes the correlation between the 
+                      brain weight (g) and body weight (kg) of different animals.",
+          Earthquakes = "The Earthquakes data set describes different earthquakes 
+                      that occurred in the US using the magnitude, distance from 
+                      where it was recorded and the ground acceleration of 
+                      the earthquake.",
+          Countries = "The Countries data set contains 154 countries and data about 
+                      them such as GDP, income per capita, literacy rate, 
+                      and money spent on military."
+        )
+      )
+      
+      ### Update variable choices ----
+      updateSelectInput(
+        session = session,
+        inputId = "horizVar",
+        choices = switch(
+          EXPR = input$selectData,
+          Animals = animalVars,
+          Earthquakes = earthquakeVars,
+          Countries = countryVars
+        ),
+        selected = switch(
+          EXPR = input$selectData,
+          Animals = "body",
+          Earthquakes = "magnitude",
+          Countries = "gdp"
+        )
+      )
+      
+      updateSelectInput(
+        session = session,
+        inputId = "vertVar",
+        choices = switch(
+          EXPR = input$selectData,
+          Animals = animalVars,
+          Earthquakes = earthquakeVars,
+          Countries = countryVars
+        ),
+        selected = switch(
+          EXPR = input$selectData,
+          Animals = "brain",
+          Earthquakes = "distance",
+          Countries = "income"
+        )
+      )
+      
+      ### Set data set ----
+      dataSet(
+        switch(
+          EXPR = input$selectData,
+          Animals = animalData,
+          Earthquakes = quakeData,
+          Countries = worldData
+        )
+      )
     }
   )
-  output$quakeDownload <- downloadHandler(
-    filename = function() {
-      paste('quake-', Sys.Date(), '.csv', sep='')
-    },
-    content = function(con) {
-      write.csv(quakedata, con)
+  
+  ## Update transformation choices ----
+  observeEvent(
+    eventExpr = c(input$horizVar, input$vertVar),
+    handlerExpr = {
+      updateCheckboxGroupInput(
+        session = session,
+        inputId = "transforms",
+        choiceNames = c(input$horizVar, input$vertVar),
+        choiceValues = c("horiz", "vert"),
+        selected = NULL
+      )
     }
   )
-  output$worldDownload <- downloadHandler(
-    filename = function() {
-      paste('world-', Sys.Date(), '.csv', sep='')
+  
+  ## Main scatter plot ----
+  output$scatterPlot <- renderPlot(
+    expr = {
+      mainPlot <- ggplot(
+        data = dataSet(),
+        mapping = aes_string(x = input$horizVar, y = input$vertVar)
+      ) +
+        geom_point(size = 2) +
+        theme_bw() +
+        labs(
+          title = paste(input$vertVar , "vs", input$horizVar)
+        ) + 
+        theme(
+            plot.title = element_text(hjust = 0.5),
+            text = element_text(size = 18)
+          )
+      
+      if ("horiz" %in% input$transforms) {
+        mainPlot <- mainPlot +
+          scale_x_continuous(
+            trans = "log",
+            labels = scales::number_format(
+              accuracy = 0.01,
+              big.mark = ","
+            )
+          ) +
+          labs(
+            x = paste0("Log(", input$horizVar, ")")
+          )
+      }
+      
+      if ("vert" %in% input$transforms) {
+        mainPlot <- mainPlot +
+          scale_y_continuous(
+            trans = "log",
+            labels = scales::number_format(
+              accuracy = 0.01,
+              big.mark = ","
+            )
+          ) +
+          labs(
+            y = paste0("Log(", input$vertVar, ")")
+          )
+      }
+      
+      mainPlot
     },
-    content = function(con) {
-      write.csv(worlddata, con)
-    }
+    alt = reactive(paste("A scatter plot of", isolate(input$vertVar), "and", 
+                isolate(input$horizVar), "from the", 
+                isolate(input$selectData), "data set."))
   )
+  
+  ## Horizontal histogram ----
+  output$horizontalHist <- renderPlot(
+    expr = {
+      firstHist <- ggplot(
+        data = dataSet(),
+        mapping = aes_string(x = input$horizVar)
+      ) +
+        geom_histogram(
+          color = "black",
+          fill = boastPalette[3],
+          binwidth = fdWidth,
+          closed = "left",
+          boundary = 0
+        ) +
+        theme_bw() +
+        theme(
+          plot.title = element_text(hjust = 0.5),
+          text = element_text(size = 18)
+        )
+      
+      if ("horiz" %in% input$transforms) {
+        firstHist <- firstHist +
+          scale_x_continuous(
+            trans = "log",
+            labels = scales::number_format(
+              accuracy = 0.01,
+              big.mark = ","
+            )
+          ) +
+          labs(
+            x = paste0("Log(", input$horizVar, ")"),
+            title = paste0("Histogram of Log(", input$horizVar, ")")
+          )
+      } else {
+        firstHist <- firstHist +
+          labs(
+            title = paste("Histogram of", input$horizVar)
+          )
+      }
+      
+      firstHist
+    },
+    alt = reactive(paste("A histogram of", isolate(input$horizVar), "from the", 
+                         isolate(input$selectData), "data set."))
+  )
+  
+  ## Vertical histogram ----
+  output$verticalHist <- renderPlot(
+    expr = {
+      secondHist <- ggplot(
+        data = dataSet(),
+        mapping = aes_string(x = input$vertVar)
+      ) +
+        geom_histogram(
+          color = "black",
+          fill = boastPalette[3],
+          binwidth = fdWidth,
+          closed = "left",
+          boundary = 0
+        ) +
+        theme_bw() +
+        theme(
+          plot.title = element_text(hjust = 0.5),
+          text = element_text(size = 18)
+        )
+      
+      if ("vert" %in% input$transforms) {
+        secondHist <- secondHist +
+          scale_x_continuous(
+            trans = "log",
+            labels = scales::number_format(
+              accuracy = 0.01,
+              big.mark = ","
+            )
+          ) +
+          labs(
+            x = paste0("Log(", input$vertVar, ")"),
+            title = paste0("Histogram of Log(", input$vertVar, ")")
+          )
+      } else {
+        secondHist <- secondHist +
+          labs(
+            title = paste("Histogram of", input$vertVar)
+          )
+      }
+      
+      secondHist
+    },
+    alt = reactive(paste("A histogram of", isolate(input$vertVar), "from the", 
+                         isolate(input$selectData), "data set."))
+  )
+  
 
-  # Animal Plots
+  # Animal Plots ----
   
   output$animalPlot <- 
     renderPlot({
@@ -356,7 +506,7 @@ server <- function(input, output, session) {
       if(length(input$transforms) == 0)
       {
         ggplot(
-          data = animaldata,
+          data = animalData,
           mapping = aes_string(x = input$Xanimal, y= input$Yanimal)
         ) +geom_point() +theme_bw() + # This is the preferred theme
           labs(
@@ -376,7 +526,7 @@ server <- function(input, output, session) {
         if(input$transforms == 'Transform Y')
         {
           ggplot(
-            data = animaldata,
+            data = animalData,
             mapping = aes_string(x = input$Xanimal, y=input$Yanimal)
           ) +geom_point() + scale_y_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+theme_bw() + 
             labs(
@@ -390,7 +540,7 @@ server <- function(input, output, session) {
         else if(input$transforms == 'Transform X')
         {
           ggplot(
-            data = animaldata,
+            data = animalData,
             mapping = aes_string(x = input$Xanimal, y=input$Yanimal)
           ) +geom_point() + scale_x_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+theme_bw() + 
             labs(
@@ -406,7 +556,7 @@ server <- function(input, output, session) {
       else #Doesn't plot line, but plots R-squared value
       {
         ggplot(
-          data = animaldata,
+          data = animalData,
           mapping = aes_string(x = input$Xanimal, y=input$Yanimal)) +geom_point() + 
           scale_x_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+
           scale_y_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+
@@ -426,7 +576,7 @@ server <- function(input, output, session) {
       if(input$loghist1 == TRUE)
       {
         ggplot(
-          data = animaldata,
+          data = animalData,
           mapping = aes_string(x = input$Xanimal)
         ) + scale_y_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+geom_histogram(
           color = "black", 
@@ -445,7 +595,7 @@ server <- function(input, output, session) {
       #Use binwidth 
       else{
         ggplot(
-          data = animaldata,
+          data = animalData,
           mapping = aes_string(x = input$Xanimal)
         ) +geom_histogram(
           color = "black", 
@@ -467,7 +617,7 @@ server <- function(input, output, session) {
       if(input$loghist2 == TRUE)
       {
         ggplot(
-          data = animaldata,
+          data = animalData,
           mapping = aes_string(x = input$Yanimal)
         ) + scale_x_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+geom_histogram(
           color = "black", 
@@ -484,7 +634,7 @@ server <- function(input, output, session) {
       }
       else{
         ggplot(
-          data = animaldata,
+          data = animalData,
           mapping = aes_string(x = input$Yanimal)
         ) +geom_histogram(
           color = "black", 
@@ -508,7 +658,7 @@ server <- function(input, output, session) {
       if(length(input$transforms) == 0)
       {
         ggplot(
-          data = worlddata,
+          data = worldData,
           mapping = aes_string(x = input$Xworld, y= input$Yworld)
         ) +geom_point() +theme_bw() + # This is the preferred theme
           labs(
@@ -524,7 +674,7 @@ server <- function(input, output, session) {
         if(input$transforms == 'Transform Y')
         {
           ggplot(
-            data = worlddata,
+            data = worldData,
             mapping = aes_string(x = input$Xworld, y=input$Yworld)
           ) +geom_point() + scale_y_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+theme_bw() + 
             labs(
@@ -537,7 +687,7 @@ server <- function(input, output, session) {
         else if(input$transforms == 'Transform X')
         {
           ggplot(
-            data = worlddata,
+            data = worldData,
             mapping = aes_string(x = input$Xworld, y=input$Yworld)
           ) +geom_point() + scale_x_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+theme_bw() + 
             labs(
@@ -553,7 +703,7 @@ server <- function(input, output, session) {
       else
       {
         ggplot(
-          data = worlddata,
+          data = worldData,
           mapping = aes_string(x = input$Xworld, y=input$Yworld)) +geom_point() + 
           scale_x_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+
           scale_y_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+
@@ -571,7 +721,7 @@ server <- function(input, output, session) {
       if(input$loghist1 == TRUE)
       {
         ggplot(
-          data = worlddata,
+          data = worldData,
           mapping = aes_string(x = input$Xworld)
         ) + scale_y_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+geom_histogram(
           color = "black", 
@@ -588,7 +738,7 @@ server <- function(input, output, session) {
       }
       else{
         ggplot(
-          data = worlddata,
+          data = worldData,
           mapping = aes_string(x = input$Xworld)
         ) +geom_histogram(
           color = "black", 
@@ -609,7 +759,7 @@ server <- function(input, output, session) {
       if(input$loghist2 == TRUE)
       {
         ggplot(
-          data = worlddata,
+          data = worldData,
           mapping = aes_string(x = input$Yworld)
         ) + scale_x_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+geom_histogram(
           color = "black", 
@@ -626,7 +776,7 @@ server <- function(input, output, session) {
       }
       else{
         ggplot(
-          data = worlddata,
+          data = worldData,
           mapping = aes_string(x = input$Yworld)
         ) +geom_histogram(
           color = "black", 
@@ -652,7 +802,7 @@ server <- function(input, output, session) {
       if(length(input$transforms) == 0)
       {
         ggplot(
-          data = quakedata,
+          data = quakeData,
           mapping = aes_string(x = input$Xquake, y= input$Yquake)
         ) +geom_point() +theme_bw() + # This is the preferred theme
           labs(
@@ -671,7 +821,7 @@ server <- function(input, output, session) {
         if(input$transforms == 'Transform Y')
         {
           ggplot(
-            data = quakedata,
+            data = quakeData,
             mapping = aes_string(x = input$Xquake, y=input$Yquake)
           ) +geom_point() + scale_y_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+theme_bw() + 
             labs(
@@ -685,7 +835,7 @@ server <- function(input, output, session) {
         else if(input$transforms == 'Transform X')
         {
           ggplot(
-            data = quakedata,
+            data = quakeData,
             mapping = aes_string(x = input$Xquake, y=input$Yquake)
           ) +geom_point() + scale_x_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+theme_bw() + 
             labs(
@@ -700,7 +850,7 @@ server <- function(input, output, session) {
       else #Doesn't plot line, but plots R-squared value
       {
         ggplot(
-          data = quakedata,
+          data = quakeData,
           mapping = aes_string(x = input$Xquake, y=input$Yquake)) +geom_point() + 
           scale_x_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+
           scale_y_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+
@@ -720,7 +870,7 @@ server <- function(input, output, session) {
         if(input$loghist2 == TRUE)
         {
           ggplot(
-            data = quakedata,
+            data = quakeData,
             mapping = aes_string(x = input$Yquake)
           ) + scale_x_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+geom_histogram(
             color = "black", 
@@ -737,7 +887,7 @@ server <- function(input, output, session) {
         }
         else{
           ggplot(
-            data = quakedata,
+            data = quakeData,
             mapping = aes_string(x = input$Yquake)
           ) +geom_histogram(
             color = "black", 
@@ -758,7 +908,7 @@ server <- function(input, output, session) {
         if(input$loghist1 == TRUE)
         {
           ggplot(
-            data = quakedata,
+            data = quakeData,
             mapping = aes_string(x = input$Xquake)
           ) + scale_y_continuous(trans = "log", labels = scales::number_format(accuracy = 0.01))+geom_histogram(
             color = "black", 
@@ -775,7 +925,7 @@ server <- function(input, output, session) {
         }
         else{
           ggplot(
-            data = quakedata,
+            data = quakeData,
             mapping = aes_string(x = input$Xquake)
           ) +geom_histogram(
             color = "black", 
