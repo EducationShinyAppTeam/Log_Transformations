@@ -1,0 +1,22 @@
+Title: Log Transformations
+ShortName: Log Transformations
+Date: 2021-11-13
+Lifecycle: experimental
+Authors@R: c(
+    person(given = "Alex", family = "Chen", role = c("aut", "cre")),
+    person(given = "Daehoon", family = "Gwak", role = c("ctb")),
+    person(given = "Paridhi", family = "Khandelwal", role = c("aut")),
+    person(given = "Dennis", family = "Pearl", role = c("aut")),
+    person(given = "Neil", family = "Hatfield", role = c("aut"))
+  )
+Chapter: Data Science
+Description: This app explores the use of the log transformation in real data sets to make data more symmetric, more interpretable, or closer to a linear relationship with another variable.
+LearningObjectives: c(
+    "TBA"
+  )
+DisplayMode: Normal
+URL: https://psu-eberly.shinyapps.io/Log_Transformations
+BugReports: https://github.com/EducationShinyAppTeam/Log_Transformations/issues
+License: CC-BY-NC-SA-4.0
+Tags: simulation
+Type: Shiny
